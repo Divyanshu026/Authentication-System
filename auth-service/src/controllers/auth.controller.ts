@@ -1,5 +1,6 @@
 import { NextFunction, Request,Response } from "express";
 import { loginUser, registerUser } from "../services/auth.services.js";
+import { deleteSession } from "../services/session.service.js";
   
 // zod validation for inputs
 
@@ -68,8 +69,34 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
       data: user
     });
   } catch (error) {
-    // 7. Hand off to the global error middleware (Assignment 13)
+    // 7. Hand off to the global error middleware 
     next(error); 
   }
 };
 
+export const logout = async(req:Request, res:Response, next: NextFunction) : Promise<void> => {
+    try {
+      const refreshToken = req.cookies?.refreshToken;
+      if(refreshToken) {
+        await deleteSession(refreshToken);
+      }
+      const cookieOptions = {
+      httpOnly: true, // Prevents client-side JS from reading the tokens (Mitigates XSS)
+      secure: process.env.NODE_ENV === 'production', // Only transmit over HTTPS in prod
+      sameSite: 'lax' as const, // Prevents Cross-Site Request Forgery (CSRF)
+    };
+      res.clearCookie('accessToken', {
+        ...cookieOptions
+      })
+      res.clearCookie('refresToken', {
+        ...cookieOptions
+      })
+      res.status(200).json({
+        error: false,
+        message: 'Logged out successfully'
+      })
+    } catch (error) {
+      next(error);
+    }
+
+}

@@ -3,8 +3,9 @@ import crypto from 'crypto';
 import { redisClient } from '../config/redis.js';
 import { configDotenv } from 'dotenv';
 import { json } from 'zod';
+import { readFileSync } from 'fs';
 configDotenv();
-  
+
 export const generateTokens = (userId: string) => {
   // 1. Generate an Access Token (JWT) containing the userId. 
   const secret:any = process.env.JWT_SECRET;
@@ -40,4 +41,13 @@ export const createSession = async (userId: string, refreshToken: string, metada
         EX : 7 * 24 * 60 * 60
     })
   
+};
+
+
+export const deleteSession = async (rawRefreshToken: string): Promise<void> => {
+  // 1. Hash the incoming token using the exact same algorithm from login
+  const hashedToken = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
+  
+  // 2. Delete the key from Redis
+  await redisClient.del(`session:${hashedToken}`);
 };
