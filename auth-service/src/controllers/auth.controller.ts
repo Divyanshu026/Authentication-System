@@ -33,7 +33,7 @@ export const login = async (req: Request, res: Response, next: NextFunction): Pr
   try {
     const { email, password } = req.body;
     
-    // 1. Extract metadata (User-Agent, IP address) for Redis session tracking
+    // 1. Extract metadata (User-Agent, IP address) for Redis session tracking.
     const metadata = {
       userAgent: req.headers['user-agent'] || 'unknown',
       ipAddress: req.ip || req.socket.remoteAddress || 'unknown'
