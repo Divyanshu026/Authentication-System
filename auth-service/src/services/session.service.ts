@@ -4,6 +4,7 @@ import { redisClient } from '../config/redis.js';
 import { configDotenv } from 'dotenv';
 import { json } from 'zod';
 configDotenv();
+
 export const generateTokens = (userId: string) => {
   // 1. Generate an Access Token (JWT) containing the userId. 
   const secret:any = process.env.JWT_SECRET;
