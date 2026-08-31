@@ -1,0 +1,53 @@
+@baseUrl = http://localhost:5001
+
+### 1. Health Check
+GET {{baseUrl}}/health
+
+### ==========================================
+
+### 2. Register a New User
+# @name registerUser
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "test1@top1percent.com",
+  "password": "SuperSecretPassword123!"
+}
+
+### 3. Test Zod Validation (Should Fail - 400 Bad Request)
+POST {{baseUrl}}/auth/register
+Content-Type: application/json
+
+{
+  "email": "not-an-email",
+  "password": "short"
+}
+
+### ==========================================
+
+### 4. Login (This will automatically save the cookies in VS Code)
+# @name loginUser
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test1@top1percent.com",
+  "password": "SuperSecretPassword123!"
+}
+
+### 5. Test Invalid Login (Should Fail - 400/401)
+POST {{baseUrl}}/auth/login
+Content-Type: application/json
+
+{
+  "email": "test@top1percent.com",
+  "password": "WrongPassword!"
+}
+
+### ==========================================
+
+### 6. Access Protected Route (/me)
+# Because you logged in at Step 4, the REST Client will automatically 
+# attach the accessToken cookie to this request.
+GET {{baseUrl}}/auth/me

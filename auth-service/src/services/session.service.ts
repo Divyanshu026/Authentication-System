@@ -7,7 +7,7 @@ configDotenv();
 export const generateTokens = (userId: string) => {
   // 1. Generate an Access Token (JWT) containing the userId. 
   const secret:any = process.env.JWT_SECRET;
-  const accessToken = jwt.sign({userId},secret,{expiresIn:'15m'})
+  const accessToken = jwt.sign({userId:userId},secret,{expiresIn:'15m'})
   // Set expiration to 15 minutes. Use process.env.JWT_SECRET.
   
   // 2. Generate a cryptographically secure random string for the Refresh Token (use crypto.randomBytes).

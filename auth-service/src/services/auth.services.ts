@@ -5,7 +5,7 @@ import { createSession, generateTokens } from './session.service.js';
 export const registerUser = async (email:string, rawPassword:string)=> {
     // check for exisiting
     const existingUser = await findUserByEmail(email);
-    if(!existingUser) {
+    if(existingUser) {
         throw new Error("Registration Failed. Please check your inputs!");
     }
 
