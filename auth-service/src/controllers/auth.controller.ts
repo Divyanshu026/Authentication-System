@@ -1,7 +1,8 @@
 import { NextFunction, Request,Response } from "express";
 import { loginUser, registerUser } from "../services/auth.services.js";
 import { deleteSession } from "../services/session.service.js";
-  
+import { requestPasswordReset, executePasswordReset } from '../services/password.service.js';
+import { generateVerificationToken, executeEmailVerification } from '../services/verification.service.js';
 // zod validation for inputs
 
 
@@ -100,3 +101,78 @@ export const logout = async(req:Request, res:Response, next: NextFunction) : Pro
     }
 
 }
+
+
+export const forgotPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { email } = req.body;
+    
+    await requestPasswordReset(email);
+
+    res.status(200).json({
+      error: false,
+      message: 'If an account with that email exists, a reset link has been sent.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPassword = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { token, newPassword } = req.body;
+
+    await executePasswordReset(token, newPassword);
+
+    // Optional: If you updated your Redis logic to track sessions by User ID, 
+    // you would call a function here like `deleteAllUserSessions(userId)` 
+    // to kick the user out of all other devices.
+
+    res.status(200).json({
+      error: false,
+      message: 'Password has been reset successfully. Please log in with your new password.'
+    });
+  } catch (error: any) {
+    if (error.message === 'Invalid or expired token') {
+      res.status(400).json({ error: true, message: error.message });
+      return;
+    }
+    next(error);
+  }
+};
+
+
+export const requestEmailVerification = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // req.user is populated by the requireAuth middleware
+    const userId = req.user!.id; 
+    
+    await generateVerificationToken(userId);
+
+    res.status(200).json({
+      error: false,
+      message: 'If your account is unverified, a new verification link has been sent.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const verifyEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const { token } = req.body;
+
+    await executeEmailVerification(token);
+
+    res.status(200).json({
+      error: false,
+      message: 'Email successfully verified.'
+    });
+  } catch (error: any) {
+    if (error.message === 'Invalid or expired verification token') {
+      res.status(400).json({ error: true, message: error.message });
+      return;
+    }
+    next(error);
+  }
+};

@@ -26,3 +26,17 @@ export const findUserById = async(id:string):Promise<User | null> => {
     )
     return result.rows[0] || null;
 }
+
+export const updatePassword = async (userId: string, newPasswordHash: string): Promise<void> => {
+  await db.query(
+    'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+    [newPasswordHash, userId]
+  );
+};
+
+export const markUserAsVerified = async (userId: string): Promise<void> => {
+  await db.query(
+    'UPDATE users SET is_verified = true, updated_at = NOW() WHERE id = $1',
+    [userId]
+  );
+};
