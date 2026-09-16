@@ -1,4 +1,4 @@
-import pool from '../config/db.js';
+import db from "../config/db.js";
 
 export interface VerificationToken {
   id: string;
@@ -15,7 +15,7 @@ export const createToken = async (
   type: string, 
   expiresAt: Date
 ): Promise<VerificationToken> => {
-  const result = await pool.query<VerificationToken>(
+  const result = await db.query<VerificationToken>(
     `INSERT INTO verification_tokens (user_id, token_hash, type, expires_at) 
      VALUES ($1, $2, $3, $4) 
      RETURNING *`,
@@ -27,20 +27,20 @@ export const createToken = async (
 export const findTokenByHash = async (
   tokenHash: string, 
   type: string
-): Promise<VerificationToken | null> => {
-  const result = await pool.query<VerificationToken>(
+): Promise<VerificationToken> => {
+  const result = await db.query<VerificationToken>(
     `SELECT * FROM verification_tokens 
      WHERE token_hash = $1 AND type = $2`,
     [tokenHash, type]
   );
-  return result.rows[0] || null;
+  return result.rows[0]!;
 };
 
 export const deleteTokensByUserId = async (
   userId: string, 
   type: string
 ): Promise<void> => {
-  await pool.query(
+  await db.query(
     `DELETE FROM verification_tokens 
      WHERE user_id = $1 AND type = $2`,
     [userId, type]

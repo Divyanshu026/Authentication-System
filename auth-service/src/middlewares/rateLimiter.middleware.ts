@@ -15,7 +15,7 @@ export const apiLimiter = rateLimit({
 // 2. Strict Auth Limiter: 5 requests per 15 minutes per IP
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, 
-  max: 5, 
+  max: 25, 
   standardHeaders: true,
   legacyHeaders: false,
   message: {

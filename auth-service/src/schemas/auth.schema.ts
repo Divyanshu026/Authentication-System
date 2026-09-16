@@ -33,3 +33,4 @@ export const verifyEmailSchema = z.object({
     token: z.string().min(1, 'Token is required'),
   }),
 });
+

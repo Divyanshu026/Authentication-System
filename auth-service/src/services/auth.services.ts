@@ -1,6 +1,7 @@
 import argon2 from 'argon2'
 import { createUser, findUserByEmail } from '../repositories/user.repository.js'
 import { createSession, generateTokens } from './session.service.js';
+import { generateVerificationToken } from './verification.service.js';
 
 export const registerUser = async (email:string, rawPassword:string)=> {
     // check for exisiting
@@ -16,6 +17,7 @@ export const registerUser = async (email:string, rawPassword:string)=> {
     }
     
     const { password_hash, ...safeUser } = user;
+    await generateVerificationToken(safeUser.email);
     return safeUser;
 }
 

@@ -145,9 +145,32 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
 export const requestEmailVerification = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
     // req.user is populated by the requireAuth middleware
-    const userId = req.user!.id; 
+    const email = req.user!.email;
     
-    await generateVerificationToken(userId);
+    await generateVerificationToken(email);
+
+    res.status(200).json({
+      error: false,
+      message: 'If your account is unverified, a new verification link has been sent.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+export const resendVerificationEmail = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    // req.user is guaranteed to exist because of requireAuth
+    const user = req.user;
+
+    if (!user) {
+      res.status(401).json({ error: true, message: 'Authentication required' });
+      return;
+    }
+
+    // Trigger the token generation (the service will automatically check if already verified)
+    await generateVerificationToken(user.email);
 
     res.status(200).json({
       error: false,
