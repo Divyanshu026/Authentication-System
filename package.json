@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "cors": "^2.8.6",
+    "helmet": "^8.3.0"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19"
+  }
+}

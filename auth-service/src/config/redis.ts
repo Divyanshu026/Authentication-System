@@ -12,7 +12,4 @@ redisClient.on('error', (err) => console.error('Redis Client Error', err));
 export const connectRedis = async () => {
     await redisClient.connect();
     console.log("Redis connected successfully");
-  // TODO: Connect the client and log a success message
 };
-
-// (Remember to call connectRedis() inside your server.ts bootstrap function)

@@ -1,12 +1,13 @@
 import { NextFunction, Request,Response } from "express";
-import { loginUser, registerUser } from "../services/auth.services.js";
+import { loginUser, registerUser, refreshUserSession } from "../services/auth.services.js";
 import { deleteSession } from "../services/session.service.js";
 import { requestPasswordReset, executePasswordReset } from '../services/password.service.js';
 import { generateVerificationToken, executeEmailVerification } from '../services/verification.service.js';
+import { AppError } from "../utils/AppError.js";
 // zod validation for inputs
 
 
-export const register = async (req: Request, res: Response): Promise<any> => {
+export const register = async (req: Request, res: Response, next: NextFunction): Promise<any> => {
     try {
         const {email,password} = req.body;
         if(!email || !password) {
@@ -22,11 +23,8 @@ export const register = async (req: Request, res: Response): Promise<any> => {
             message: 'User registered successfully',
             data: newUser
         })
-    } catch (error:any) {
-        return res.status(400).json({
-            error: true,
-            message: error.message
-        })
+    } catch (error) {
+      next(error);
     }
 };
 
@@ -132,11 +130,7 @@ export const resetPassword = async (req: Request, res: Response, next: NextFunct
       error: false,
       message: 'Password has been reset successfully. Please log in with your new password.'
     });
-  } catch (error: any) {
-    if (error.message === 'Invalid or expired token') {
-      res.status(400).json({ error: true, message: error.message });
-      return;
-    }
+  } catch (error) {
     next(error);
   }
 };
@@ -191,11 +185,50 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
       error: false,
       message: 'Email successfully verified.'
     });
-  } catch (error: any) {
-    if (error.message === 'Invalid or expired verification token') {
-      res.status(400).json({ error: true, message: error.message });
-      return;
+  } catch (error) {
+    next(error);
+  }
+};
+
+
+
+export const refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const oldRefreshToken = req.cookies?.refreshToken;
+
+    if (!oldRefreshToken) {
+      throw new AppError('No refresh token provided', 401);
     }
+
+    // Extract metadata from the incoming Express request
+    const metadata = {
+      ip: req.ip,
+      userAgent: req.headers['user-agent'] || 'Unknown Device'
+    };
+
+    const { newAccessToken, newRawRefreshToken } = await refreshUserSession(oldRefreshToken, metadata);
+
+    // Issue the new Access Token (15 minutes)
+    res.cookie('accessToken', newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 15 * 60 * 1000 
+    });
+
+    // Issue the new Refresh Token (7 days)
+    res.cookie('refreshToken', newRawRefreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 7 * 24 * 60 * 60 * 1000
+    });
+
+    res.status(200).json({ error: false, message: 'Session refreshed successfully' });
+  } catch (error) {
+    // SECURITY: If refresh fails, wipe the cookies so the client drops into a logged-out state
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
     next(error);
   }
 };

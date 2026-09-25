@@ -1,25 +1,37 @@
 import rateLimit from 'express-rate-limit';
+import { RedisStore } from 'rate-limit-redis';
+import redisClient from '../config/redis.js';
+import { error } from 'node:console';
 
-// 1. General API Limiter: 100 requests per 15 minutes per IP
-export const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 100, 
+
+// 1. Global Limiter: Protects standard API routes
+export const globalLimiter = rateLimit({
+  store: new RedisStore({
+    // Adapt this depending on your Redis client (node-redis v4 syntax shown below)
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args),
+  }),
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per window
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
-  message: {
+  message: { 
     error: true,
-    message: 'Too many requests from this IP, please try again after 15 minutes.'
+    message: 'Too many requests from this IP, please try again later.'
   }
 });
 
-// 2. Strict Auth Limiter: 5 requests per 15 minutes per IP
+
+// 2. Strict Auth Limiter: Stops credential stuffing and brute force attacks
 export const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, 
-  max: 25, 
+  store: new RedisStore({
+    sendCommand: (...args: string[]) => redisClient.sendCommand(args)
+  }),
+  windowMs: 15*60*1000,
+  max: 5,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     error: true,
-    message: 'Too many authentication attempts, please try again after 15 minutes.'
+    message: 'Too many authentication attempts. Your IP has been temporarily blocked for 15 minutes.'
   }
-});
+})

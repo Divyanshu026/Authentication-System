@@ -2,7 +2,7 @@ import { Router } from "express";
 import { validate } from "../middlewares/validate.middleware.js";
 import { getMe } from "../controllers/user.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
-import { register, login, logout, forgotPassword, resetPassword, verifyEmail, requestEmailVerification } from '../controllers/auth.controller.js';
+import { register, login, logout, forgotPassword, resetPassword, verifyEmail, requestEmailVerification, refreshToken } from '../controllers/auth.controller.js';
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '../schemas/auth.schema.js';
 import { authLimiter } from '../middlewares/rateLimiter.middleware.js';
 import { requireVerified } from "../middlewares/verified.middleware.js";
@@ -22,6 +22,8 @@ router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
 
 router.post('/verify-email', validate(verifyEmailSchema), verifyEmail);
 router.post('/verify-email/resend', requireAuth, requestEmailVerification);
+
+router.post('/refresh',refreshToken)
 
 // router.post('/transfer-funds',requireAuth, requireVerified,transferfundController)
 

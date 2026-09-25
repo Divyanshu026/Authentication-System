@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { findUserByEmail } from '../repositories/user.repository.js';
 import { verifyUserEmail } from '../repositories/user.repository.js';
 import { createToken, findTokenByHash, deleteTokensByUserId } from '../repositories/token.repository.js';
+import { AppError } from '../utils/AppError.js';
 
 
 export const generateVerificationToken = async (email: string): Promise<void> => {
@@ -35,7 +36,7 @@ export const executeEmailVerification = async (rawToken: string): Promise<void> 
       const token = await findTokenByHash(tokenHash,'EMAIL_VERIFICATION');
   // 3. If token doesn't exist OR expires_at is in the past, throw an Error ('Invalid or expired token').
             if (!token || token.expires_at < new Date()) {
-                throw new Error('Invalid or expired verification token');
+                throw new AppError('Invalid or expired verification token', 400);
             }
   // 4. Update the user's status in the database using verifyUserEmail(token.user_id).
       await verifyUserEmail(token.user_id);

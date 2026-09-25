@@ -2,8 +2,7 @@ import crypto from 'crypto';
 import argon2 from 'argon2';
 import { findUserByEmail, updatePassword } from '../repositories/user.repository.js';
 import { createToken, findTokenByHash, deleteTokensByUserId } from '../repositories/token.repository.js';
-import { hex } from 'zod';
-import { error } from 'console';
+import { AppError } from '../utils/AppError.js';
 // Import redisClient or your deleteSession function to invalidate active logins
 
 export const requestPasswordReset = async (email: string): Promise<void> => {
@@ -49,8 +48,7 @@ export const executePasswordReset = async (rawToken: string, newRawPassword: str
       const token = await findTokenByHash(tokenHash, 'PASSWORD_RESET');
   // 3. If token doesn't exist OR expires_at is in the past, throw Error('Invalid or expired token').
       if(!token || token?.expires_at < new Date()) {
-        throw  error('Invalid or expired token');
-        return;
+        throw new AppError('Invalid or expired token', 400);
       }
   // 4. Hash the newRawPassword using argon2.hash().
       const newPasswordHash = await argon2.hash(newRawPassword);

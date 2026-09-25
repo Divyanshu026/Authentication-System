@@ -51,3 +51,16 @@ export const deleteSession = async (rawRefreshToken: string): Promise<void> => {
   // 2. Delete the key from Redis
   await redisClient.del(`session:${hashedToken}`);
 };
+
+export const getSessionUserId = async(rawRefreshToken: string) : Promise<string> => {
+  // 1. Hash the incoming token (Redis only knows hashedToken)
+    const hashedToken = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
+  
+  // 2. Get the UserId stored at this key
+    const data = await redisClient.get(`session:${hashedToken}`);
+    if (!data) {
+      throw new Error('Session not found or expired');
+    }
+    const sessionData = JSON.parse(data);
+    return sessionData.userId;
+}
