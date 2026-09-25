@@ -1,7 +1,7 @@
 import rateLimit from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
-import redisClient from '../config/redis.js';
 import { error } from 'node:console';
+import { redisClient } from '../config/redis.js';
 
 
 // 1. Global Limiter: Protects standard API routes

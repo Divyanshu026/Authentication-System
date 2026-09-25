@@ -1,7 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { ZodError } from 'zod';
 import { AppError } from '../utils/AppError.js';
-import { JsonWebTokenError, TokenExpiredError } from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';
+
+const { JsonWebTokenError, TokenExpiredError } = jwt;
 
 export const globalErrorHandler = (
   err: any,

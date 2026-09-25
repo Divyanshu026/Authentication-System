@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS users (
  
 CREATE INDEX IF NOT EXISTS idx_user_email ON users(email);    -- creates index so that email search queries can be done faster
 
-CREATE TABLE verification_tokens (
+CREATE TABLE IF NOT EXISTS verification_tokens (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     token_hash VARCHAR(256) NOT NULL,
