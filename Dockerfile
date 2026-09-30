@@ -1,42 +1,40 @@
 # ==========================================
 # STAGE 1: BUILDER
 # ==========================================
-FROM node:20-slim AS builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Install build tools needed to compile native addons (e.g. argon2)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3 \
-    make \
-    g++ \
-    && rm -rf /var/lib/apt/lists/*
+# Install tools required to compile native dependencies such as argon2
+RUN apk add --no-cache python3 make g++
 
-# Install ALL dependencies
+# Copy package files and install ALL dependencies (including dev for TS)
 COPY package*.json ./
 RUN npm ci
 
-# Copy source code and compile
-COPY . .
-RUN npm run build
+# Copy the service source and compile with the root project configuration
+COPY tsconfig.json ./tsconfig.json
+COPY auth-service/src ./auth-service/src
+RUN ./node_modules/.bin/tsc -p tsconfig.json
 
 # ==========================================
 # STAGE 2: PRODUCTION
 # ==========================================
-FROM node:20-slim AS production
+FROM node:20-alpine AS production
 
+# Enforce production environment optimizations
 ENV NODE_ENV=production
 
 WORKDIR /app
 
-# Reuse the node_modules already built in the builder stage,
-# then strip out devDependencies — avoids recompiling native addons
+# Reuse the native modules built in the builder, then remove dev dependencies
 COPY --from=builder /app/node_modules ./node_modules
 COPY package*.json ./
 RUN npm prune --omit=dev
 
 # Transfer the compiled JavaScript from the builder
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/auth-service/src/config/schema.sql ./src/config/schema.sql
 
 # Expose the network port
 EXPOSE 3000

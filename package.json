@@ -1,6 +1,7 @@
 {
   "scripts": {
     "build": "tsc",
+    "typecheck": "tsc --noEmit",
     "dev": "tsx watch src/server.ts",
     "start": "node dist/server.js",
     "migrate": "tsx src/scripts/migrate.ts",
