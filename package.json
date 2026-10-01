@@ -40,6 +40,7 @@
     "express-rate-limit": "^8.7.0",
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
+    "nodemailer": "^10.0.13",
     "pg": "^8.23.0",
     "rate-limit-redis": "^6.0.1",
     "redis": "^6.2.1",

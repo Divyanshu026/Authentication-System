@@ -87,7 +87,7 @@ export const logout = async(req:Request, res:Response, next: NextFunction) : Pro
       res.clearCookie('accessToken', {
         ...cookieOptions
       })
-      res.clearCookie('refresToken', {
+      res.clearCookie('refreshToken', {
         ...cookieOptions
       })
       res.status(200).json({

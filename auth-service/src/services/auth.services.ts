@@ -28,7 +28,6 @@ export const loginUser = async (email: string, rawPassword: string, metadata: an
   // 2. If user doesn't exist, throw a generic error ("Invalid email or password").
     if(!user) throw new AppError("Invalid email or password", 401);
   // 3. Verify the rawPassword against the user.password_hash using argon2.verify().
-    const passwordHash = await argon2.hash(rawPassword);
     const isValidPassword = await argon2.verify(user.password_hash, rawPassword);
     
   // 4. If verification fails, throw the same generic error.
@@ -37,9 +36,8 @@ export const loginUser = async (email: string, rawPassword: string, metadata: an
     }
   
   // 5. Call generateTokens(user.id).
-    const { accessToken, refreshToken } =  generateTokens(user.id);
-  // 6. Call createSession(user.id, refreshToken, metadata).
-    await createSession(user.id,refreshToken,metadata)
+    const { accessToken, refreshToken, accessTokenId } = generateTokens(user.id);
+    await createSession(user.id, refreshToken, metadata, accessTokenId);
   
   // 7. Return the tokens and the sanitized user object (no password hash).
     const { password_hash, ...safeUser} = user;
@@ -66,8 +64,8 @@ export const refreshUserSession = async (oldRawRefreshToken:string, metadata: an
     await deleteSession(oldRawRefreshToken);
 
   // 4. Generate the new secrets
-    const {accessToken:newAccessToken, refreshToken: newRawRefreshToken} = generateTokens(user.id);
-    await createSession(user.id,newRawRefreshToken,metadata);
+    const { accessToken: newAccessToken, refreshToken: newRawRefreshToken, accessTokenId } = generateTokens(user.id);
+    await createSession(user.id, newRawRefreshToken, metadata, accessTokenId);
     
     return {newAccessToken,newRawRefreshToken};
 

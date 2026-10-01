@@ -4,13 +4,15 @@ services:
       context: .
       target: builder
     environment:
-      - DATABASE_URL=postgres://admin:admin123@postgres:5432/auth_db
-      - REDIS_URL=redis://redis:6379
-      - JWT_SECRET=super_secret_jwt_key_for_testing
-      - PORT=3000
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
+      - REDIS_URL=${REDIS_URL:?REDIS_URL is required}
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - PORT=${PORT:-3000}
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
       - .:/app
       - /app/node_modules

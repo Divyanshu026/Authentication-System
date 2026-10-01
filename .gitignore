@@ -1,4 +1,15 @@
 node_modules/
-.env
+
+auth-service/dist/
 dist/
+coverage/
+*.log
+npm-debug.log*
+
+.env
+.env.*
+!.env.example
+
+.DS_Store
+.vscode/
 

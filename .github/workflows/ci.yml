@@ -1,0 +1,39 @@
+name: Backend CI Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    # These now correctly override the ${VAR} placeholders in docker-compose.yml
+    env:
+      DATABASE_URL: postgresql://admin:admin123@postgres:5432/auth_db
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: ci_pipeline_super_secret_key
+      PORT: 3000
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: auth_db
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build and Boot Infrastructure
+        run: docker compose -f docker-compose.yml up --build -d
+
+      # FIX: Replaced 'exec' with 'run --rm' to eliminate the boot race condition
+      - name: Run Database Migrations
+        run: docker compose run --rm api npm run migrate:prod
+
+      - name: Execute Test Suite
+        run: docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-runner
+
+      - name: Tear Down Infrastructure
+        if: always()
+        run: docker compose down -v

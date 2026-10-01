@@ -3,15 +3,12 @@
 // the overload of opening and closing a connection for each request.
 
 import { configDotenv } from 'dotenv';
-import { error } from 'node:console';
-import {Pool} from 'pg';
+import { Pool } from 'pg';
 configDotenv();
-if(!process.env.DATABASE_URL) {
-    console.error('Database Connection Failed');
-    process.exit(1);
-}
+const databaseUrl = process.env.DATABASE_URL;
+if (!databaseUrl) throw new Error('DATABASE_URL is missing in environment variables');
 const db = new Pool({
-    connectionString: process.env.DATABASE_URL,
+    connectionString: databaseUrl,
     max:20,
     idleTimeoutMillis:3000, // close idle connections to free up db space
     connectionTimeoutMillis:5000  // timeout if connection isn't established after 5 sec

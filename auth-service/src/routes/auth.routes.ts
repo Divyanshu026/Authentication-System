@@ -111,12 +111,12 @@ router.post('/logout',requireAuth,logout)
 router.get('/me',requireAuth,getMe);
 
 router.post('/forgot-password',authLimiter, validate(forgotPasswordSchema), forgotPassword);
-router.post('/reset-password', validate(resetPasswordSchema), resetPassword);
+router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
 
-router.post('/verify-email', validate(verifyEmailSchema), verifyEmail);
-router.post('/verify-email/resend', requireAuth, requestEmailVerification);
+router.post('/verify-email', authLimiter, validate(verifyEmailSchema), verifyEmail);
+router.post('/verify-email/resend', authLimiter, requireAuth, requestEmailVerification);
 
-router.post('/refresh',refreshToken)
+router.post('/refresh', authLimiter, refreshToken)
 
 // router.post('/transfer-funds',requireAuth, requireVerified,transferfundController)
 

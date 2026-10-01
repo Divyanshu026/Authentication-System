@@ -1,9 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { findUserById } from '../repositories/user.repository.js';
-import { configDotenv } from 'dotenv';
-
-configDotenv();
+import { isAccessTokenActive } from '../services/session.service.js';
 
 export const requireAuth = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
   try {
@@ -20,7 +18,11 @@ export const requireAuth = async (req: Request, res: Response, next: NextFunctio
     // 3. Verify the token using jwt.verify() and process.env.JWT_SECRET
         const secret = process.env.JWT_SECRET;
         if (!secret) throw new Error('JWT_SECRET is missing in environment variables');
-        const decoded = jwt.verify(token, secret) as { userId: string };
+        const decoded = jwt.verify(token, secret) as { userId: string; jti?: string };
+        if (!decoded.jti || !(await isAccessTokenActive(decoded.jti))) {
+            res.status(401).json({ error: true, message: 'Session expired or revoked' });
+            return;
+        }
     // Tip: The decoded payload should contain the { userId } you signed it with in Assignment 6.
         
     // 4. Fetch the user from the database using the decoded userId

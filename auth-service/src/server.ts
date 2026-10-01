@@ -1,5 +1,6 @@
 import { configDotenv } from "dotenv";
 import db from "./config/db.js";
+import { redisClient } from "./config/redis.js";
 
 configDotenv();
 const PORT = process.env.PORT || 5000;
@@ -19,7 +20,20 @@ async function bootstrap() {
             console.log(`Authentication service running on port: ${PORT}`);
         })
 
-        // gracefull shutdown implementation
+        const shutdown = async (signal: string) => {
+            console.log(`Received ${signal}, shutting down`);
+            server.close(async (error) => {
+                if (error) {
+                    console.error('HTTP server shutdown failed', error);
+                    process.exitCode = 1;
+                }
+                if (redisClient.isOpen) await redisClient.quit();
+                await db.end();
+            });
+        };
+
+        process.once('SIGTERM', () => void shutdown('SIGTERM'));
+        process.once('SIGINT', () => void shutdown('SIGINT'));
 
 
     } catch (error) {

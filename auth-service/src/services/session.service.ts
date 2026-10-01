@@ -1,66 +1,62 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import { redisClient } from '../config/redis.js';
-import { configDotenv } from 'dotenv';
-import { json } from 'zod';
-import { readFileSync } from 'fs';
-configDotenv();
+
+const refreshTtlSeconds = 7 * 24 * 60 * 60;
+const accessTtlSeconds = 15 * 60;
 
 export const generateTokens = (userId: string) => {
-  // 1. Generate an Access Token (JWT) containing the userId. 
-  const secret:any = process.env.JWT_SECRET;
-  const accessToken = jwt.sign({userId:userId},secret,{expiresIn:'15m'})
-  // Set expiration to 15 minutes. Use process.env.JWT_SECRET.
-  
-  // 2. Generate a cryptographically secure random string for the Refresh Token (use crypto.randomBytes).
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET is missing in environment variables');
+  const accessTokenId = crypto.randomUUID();
+  const accessToken = jwt.sign({ userId }, secret, { expiresIn: accessTtlSeconds, jwtid: accessTokenId });
   const refreshToken = crypto.randomBytes(64).toString('hex');
-  
-  // 3. Return both { accessToken, refreshToken }
-  return {accessToken, refreshToken};
+  return { accessToken, refreshToken, accessTokenId };
 };
 
-export const createSession = async (userId: string, refreshToken: string, metadata: any) => {
-  // 1. Hash the refresh token before storing it (SHA-256) so if Redis is compromised, tokens are safe.
-  const hashedToken = crypto
-  .createHash('sha256')
-  .update(refreshToken)
-  .digest('hex');
-  
-  // 2. Create a session payload (stringify the userId and metadata).
-  const sessionData = JSON.stringify({
-    userId,
-    metadata
-  });
-
-  // 3. Save to Redis with a key like `session:${hashedToken}` and set a TTL (e.g., 7 days).
-  const key = `session:${hashedToken}`
-  await redisClient.set(
-    key,
-    sessionData,
-    {
-        EX : 7 * 24 * 60 * 60
-    })
-  
+export const createSession = async (userId: string, refreshToken: string, metadata: unknown, accessTokenId: string): Promise<void> => {
+  const hashedToken = crypto.createHash('sha256').update(refreshToken).digest('hex');
+  const sessionKey = `session:${hashedToken}`;
+  const sessionData = JSON.stringify({ userId, metadata, accessTokenId });
+  await redisClient.set(sessionKey, sessionData, { EX: refreshTtlSeconds });
+  await redisClient.sAdd(`user_sessions:${userId}`, sessionKey);
+  await redisClient.expire(`user_sessions:${userId}`, refreshTtlSeconds);
+  await redisClient.set(`access:${accessTokenId}`, userId, { EX: accessTtlSeconds });
 };
-
 
 export const deleteSession = async (rawRefreshToken: string): Promise<void> => {
-  // 1. Hash the incoming token using the exact same algorithm from login
   const hashedToken = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
-  
-  // 2. Delete the key from Redis
-  await redisClient.del(`session:${hashedToken}`);
+  const sessionKey = `session:${hashedToken}`;
+  const data = await redisClient.get(sessionKey);
+  await redisClient.del(sessionKey);
+  if (!data) return;
+  const sessionData = JSON.parse(data) as { userId?: string; accessTokenId?: string };
+  if (sessionData.userId) await redisClient.sRem(`user_sessions:${sessionData.userId}`, sessionKey);
+  if (sessionData.accessTokenId) await redisClient.del(`access:${sessionData.accessTokenId}`);
 };
 
-export const getSessionUserId = async(rawRefreshToken: string) : Promise<string> => {
-  // 1. Hash the incoming token (Redis only knows hashedToken)
-    const hashedToken = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
-  
-  // 2. Get the UserId stored at this key
-    const data = await redisClient.get(`session:${hashedToken}`);
-    if (!data) {
-      throw new Error('Session not found or expired');
-    }
-    const sessionData = JSON.parse(data);
-    return sessionData.userId;
-}
+export const getSessionUserId = async (rawRefreshToken: string): Promise<string> => {
+  const hashedToken = crypto.createHash('sha256').update(rawRefreshToken).digest('hex');
+  const data = await redisClient.get(`session:${hashedToken}`);
+  if (!data) throw new Error('Session not found or expired');
+  const sessionData = JSON.parse(data) as { userId?: string };
+  if (!sessionData.userId) throw new Error('Invalid session data');
+  return sessionData.userId;
+};
+
+export const deleteAllUserSessions = async (userId: string): Promise<void> => {
+  const indexKey = `user_sessions:${userId}`;
+  const sessionKeys = await redisClient.sMembers(indexKey);
+  for (const sessionKey of sessionKeys) {
+    const data = await redisClient.get(sessionKey);
+    if (!data) continue;
+    const sessionData = JSON.parse(data) as { accessTokenId?: string };
+    if (sessionData.accessTokenId) await redisClient.del(`access:${sessionData.accessTokenId}`);
+  }
+  if (sessionKeys.length) await redisClient.del(sessionKeys);
+  await redisClient.del(indexKey);
+};
+
+export const isAccessTokenActive = async (accessTokenId: string): Promise<boolean> => {
+  return (await redisClient.exists(`access:${accessTokenId}`)) === 1;
+};

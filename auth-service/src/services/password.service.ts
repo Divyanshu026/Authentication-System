@@ -3,7 +3,8 @@ import argon2 from 'argon2';
 import { findUserByEmail, updatePassword } from '../repositories/user.repository.js';
 import { createToken, findTokenByHash, deleteTokensByUserId } from '../repositories/token.repository.js';
 import { AppError } from '../utils/AppError.js';
-// Import redisClient or your deleteSession function to invalidate active logins
+import { deleteAllUserSessions } from './session.service.js';
+import { sendEmail } from './email.service.js';
 
 export const requestPasswordReset = async (email: string): Promise<void> => {
   // 1. Fetch user by email.
@@ -32,13 +33,7 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
   // 7. Save the hashed token to the database via createToken().
     await createToken(user.id, tokenHash, 'PASSWORD_RESET', expiresAt);
   
-  // 8. Simulate email delivery by logging the RAW token to your terminal:
-  // console.log(`[EMAIL SIMULATION] Reset link: http://localhost:3000/reset-password?token=${rawToken}`);
-  console.log(`\n======================================================`);
-  console.log(`[EMAIL SIMULATION] Password reset requested for ${email}`);
-  console.log(`[EMAIL SIMULATION] Send this payload to /auth/reset-password:`);
-  console.log(`{ "token": "${rawToken}" }`);
-  console.log(`======================================================\n`);
+  await sendEmail(user.email, 'Password reset', `<p>Use this token to reset your password:</p><p>${rawToken}</p>`);
 };
  
 export const executePasswordReset = async (rawToken: string, newRawPassword: string): Promise<void> => {
@@ -56,5 +51,5 @@ export const executePasswordReset = async (rawToken: string, newRawPassword: str
       await updatePassword(token.user_id, newPasswordHash);
   // 6. Delete the token (or all reset tokens for this user) so it cannot be reused.
       await deleteTokensByUserId(token.user_id,'PASSWORD_RESET');
-  // 7. SECURITY: Destroy all active Redis sessions for this user so attackers are kicked out.
+  await deleteAllUserSessions(token.user_id);
 };

@@ -3,6 +3,7 @@ import { findUserByEmail } from '../repositories/user.repository.js';
 import { verifyUserEmail } from '../repositories/user.repository.js';
 import { createToken, findTokenByHash, deleteTokensByUserId } from '../repositories/token.repository.js';
 import { AppError } from '../utils/AppError.js';
+import { sendEmail } from './email.service.js';
 
 
 export const generateVerificationToken = async (email: string): Promise<void> => {
@@ -22,11 +23,11 @@ export const generateVerificationToken = async (email: string): Promise<void> =>
       await createToken(user.id,tokenHash,'EMAIL_VERIFICATION',expiresAt);
   // 8. Simulate email delivery by logging the RAW token to your console:
   // console.log(`[EMAIL SIMULATION] Verification link: http://localhost:3000/verify-email?token=${rawToken}`);
-      console.log(`\n======================================================`);
-      console.log(`[EMAIL SIMULATION] Verification email sent to ${email}`);
-      console.log(`[EMAIL SIMULATION] Send this payload to /auth/verify-email:`);
-      console.log(`{ "token": "${rawToken}" }`);
-      console.log(`======================================================\n`);
+      const htmlTemplate = `
+        <h1>Verify Your Account</h1>
+        <p>Use the token below to verify your email address:</p>
+        <p><strong>${rawToken}</strong></p>`;
+      await sendEmail(user.email, 'Verify your account', htmlTemplate);
 };
 
 export const executeEmailVerification = async (rawToken: string): Promise<void> => {

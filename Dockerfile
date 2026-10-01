@@ -29,7 +29,11 @@ COPY --from=builder /app/auth-service/dist ./auth-service/dist
 
 COPY --from=builder /app/auth-service/src/config/schema.sql ./auth-service/dist/config/schema.sql
 
+USER node
+
 EXPOSE 3000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 CMD node -e "fetch('http://127.0.0.1:' + (process.env.PORT || 3000) + '/health').then(response => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))"
 
 CMD ["node", "auth-service/dist/server.js"]
 
