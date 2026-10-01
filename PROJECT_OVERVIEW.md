@@ -43,7 +43,7 @@ flowchart LR
 3. Controller receives the request and delegates business logic.
 4. Service layer performs authentication, session, and token operations.
 5. Repository layer interacts with PostgreSQL.
-6. Redis stores refresh session metadata and token validation state.
+6. Redis stores refresh session metadata and access-token revocation state.
 7. Response is returned with sanitized data and secure cookies.
 
 ---
@@ -105,7 +105,7 @@ The project uses a secure token-based authentication pattern:
 - Passwords are hashed using Argon2 before storage.
 - Access tokens are used for short-lived request authorization.
 - Refresh tokens are used to renew sessions without re-entering credentials.
-- Session metadata is stored in Redis for validation and replay prevention.
+- Session metadata and revocation state are stored in Redis for validation and replay prevention.
 - HTTP-only cookies prevent browser JavaScript from reading the auth tokens directly.
 
 ---
@@ -185,7 +185,7 @@ Request hits /admin/dashboard
 
 This backend is ready to be extended with:
 
-- email delivery integration with a real SMTP or provider service
+- additional email provider and template integration
 - OAuth login (Google, GitHub, etc.)
 - multi-factor authentication
 - user profile management
@@ -196,4 +196,4 @@ This backend is ready to be extended with:
 
 ## Summary
 
-The project is a robust authentication backend service built around secure practices and clear separation of concerns. It is suitable as a foundation for real-world applications that need login flows, protected APIs, and admin authorization.
+The project is an authentication backend foundation with Docker deployment, CI validation, PostgreSQL persistence, Redis-backed session revocation, cookie-based tokens, email workflows, and admin authorization. Production deployment still requires external secrets, verified SMTP, HTTPS, backups, monitoring, and a configured reverse proxy.

@@ -48,7 +48,6 @@ This project is designed as a backend auth service for web applications that nee
 │   │   ├── types/
 │   │   └── utils/
 │   ├── api.http
-│   └── README.md
 ├── tests/
 ├── docker-compose.yml
 ├── docker-compose.test.yml
@@ -75,74 +74,75 @@ Before running the project, make sure you have:
 
 ## Environment Variables
 
-Create a `.env` file in the project root:
+Create a `.env` file in the project root. Compose requires the database, Redis, and JWT values:
 
 ```env
-PORT=5001
-DATABASE_URL=postgresql://postgres:postgres@localhost:5433/auth_db
-REDIS_URL=redis://localhost:6379
-JWT_SECRET=replace-with-a-long-random-secret
+NODE_ENV=production
+PORT=3000
+TRUST_PROXY=false
 FRONTEND_URL=http://localhost:3000
-NODE_ENV=development
+
+POSTGRES_USER=auth_user
+POSTGRES_PASSWORD=change_me_local_only
+POSTGRES_DB=auth_db
+DATABASE_URL=postgresql://auth_user:change_me_local_only@postgres:5432/auth_db
+REDIS_URL=redis://redis:6379
+JWT_SECRET=replace-with-a-long-random-secret
+
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_REQUIRE_TLS=true
+SMTP_USER=your-smtp-user
+SMTP_PASS=your-smtp-password
+EMAIL_FROM=noreply@example.com
 ```
 
 Notes:
 
 - `JWT_SECRET` should be a strong, unique secret and never committed to source control
 - `DATABASE_URL` should match your PostgreSQL instance
-- `REDIS_URL` should match your Redis instance
+- `REDIS_URL` should use `redis://redis:6379` when the API runs in Compose
+- Configure SMTP variables for verification and password-reset email delivery
+- Use strong, externalized credentials and `NODE_ENV=production` in production
 
 ---
 
 ## Local Setup
 
-1. Install dependencies:
+1. Create the root `.env` file described above.
+
+2. Build and start the complete stack:
 
 ```bash
-npm install
+docker compose up --build -d
 ```
 
-2. Start PostgreSQL and Redis using Docker Compose:
+3. Run the database migration:
 
 ```bash
-docker compose up -d postgres redis
+docker compose run --rm api npm run migrate:prod
 ```
 
-3. Create the database if it does not already exist:
+4. Check the service:
 
 ```bash
-createdb auth_db
+curl http://localhost:3000/health
 ```
 
-4. Run migrations for local development:
-
-```bash
-npm run migrate:dev
-```
-
-For the Dockerized production/container environment, use:
-
-```bash
-npm run migrate:prod
-```
-
-5. Start the development server:
-
-```bash
-npm run dev
-```
-
-The service should run on:
+The service runs on:
 
 ```text
-http://localhost:5001
+http://localhost:3000
 ```
+
+For source-level development outside Docker, run PostgreSQL and Redis separately and set host-reachable `DATABASE_URL` and `REDIS_URL` values before using `npm run dev`.
 
 ---
 
 ## Docker Setup
 
-The project includes a Docker Compose setup for local development.
+The project includes a Docker Compose setup for local development and single-host deployment.
 
 ```bash
 docker compose up --build
@@ -176,8 +176,8 @@ npm test                   # run Jest test suite
 
 ### Swagger UI
 
-- `GET /api-docs` — Interactive Swagger UI documentation
-- Open in the browser at: `http://localhost:5001/api-docs`
+- `GET /api-docs` — Interactive Swagger UI documentation in non-production environments
+- Open in the browser at: `http://localhost:3000/api-docs`
 
 ### Health
 
@@ -209,8 +209,8 @@ The service uses a secure cookie-based token model:
 
 - `accessToken` is stored in an HTTP-only cookie and used for protected requests
 - `refreshToken` is stored in a separate HTTP-only cookie for session renewal
-- Redis is used to track active sessions and validate refresh tokens
-- JWT claims are used to identify the user and enforce authentication
+- Redis tracks refresh sessions and short-lived access-token revocation state
+- JWT claims identify the user; Redis-backed session state permits logout and password-reset revocation
 - Argon2 hashes passwords before saving them
 
 ---
@@ -220,7 +220,7 @@ The service uses a secure cookie-based token model:
 - password hashing with Argon2
 - HTTP-only cookies to reduce XSS risk
 - refresh token rotation and session invalidation
-- rate limiting on auth routes
+- rate limiting on authentication, refresh, verification, and reset routes
 - role-based middleware for protected admin resources
 - input validation with Zod schemas
 - CORS and Helmet hardening
@@ -235,14 +235,14 @@ This project includes API tests using Jest and Supertest.
 docker compose -f docker-compose.yml -f docker-compose.test.yml run --rm test-runner
 ```
 
-Tests are located in [tests/auth.test.ts](tests/auth.test.ts) and cover core registration and login flows.
+Tests are located in [tests/auth.test.ts](tests/auth.test.ts) and [tests/health.test.ts](tests/health.test.ts). They cover core registration, login, and health flows.
 
 ---
 
 ## Notes
 
 - The project is organized as an auth backend service and is ready to be connected to a frontend or another upstream service.
-- Swagger/OpenAPI documentation is initialized in the app and can be extended in the app configuration layer.
+- Swagger/OpenAPI documentation is available outside production; production deployments intentionally disable `/api-docs`.
 - Keep environment values out of version control and use a secure secret in production.
 
 ---
