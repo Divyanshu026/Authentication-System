@@ -30,12 +30,11 @@ app.get('/health',(req,res)=> {
     })
 })
 
-app.use(globalLimiter)
 setupSwagger(app);
 
 // routes
 app.use('/auth',authRoutes);
-app.use('/admin',adminRoutes)
+app.use('/admin', globalLimiter, adminRoutes)
 app.use(globalErrorHandler);
 
 export default app;

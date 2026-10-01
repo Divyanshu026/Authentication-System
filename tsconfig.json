@@ -2,8 +2,8 @@
   // Visit https://aka.ms/tsconfig to read more about this file
   "compilerOptions": {
     // File Layout
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "rootDir": "./auth-service/src",
+    "outDir": "./auth-service/dist",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
@@ -41,6 +41,6 @@
     "moduleDetection": "force",
     "skipLibCheck": true,
   },
-  "include": ["src/**/*.ts"],
+  "include": ["auth-service/src/**/*.ts"],
   "exclude": ["dist", "node_modules"]
 }

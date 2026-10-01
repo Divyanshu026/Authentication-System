@@ -9,7 +9,7 @@ COPY package-lock.json ./
 RUN npm ci
 
 COPY tsconfig.json ./
-COPY auth-service/src ./src
+COPY auth-service/src ./auth-service/src/
 
 RUN npm run build
 
@@ -25,11 +25,11 @@ COPY package-lock.json ./
 
 RUN npm ci --omit=dev
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/auth-service/dist ./auth-service/dist
 
-COPY --from=builder /app/src/config/schema.sql ./dist/config/schema.sql
+COPY --from=builder /app/auth-service/src/config/schema.sql ./auth-service/dist/config/schema.sql
 
 EXPOSE 3000
 
-CMD ["node", "dist/server.js"]
+CMD ["node", "auth-service/dist/server.js"]
 

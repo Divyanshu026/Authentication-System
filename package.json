@@ -1,14 +1,16 @@
-{
-  "scripts": {
-    "build": "tsc",
-    "typecheck": "tsc --noEmit",
-    "dev": "tsx watch src/server.ts",
-    "start": "node dist/server.js",
-    "migrate": "tsx src/scripts/migrate.ts",
-    "migrate:dev": "tsx src/scripts/migrate.ts",
-    "migrate:prod": "node dist/scripts/migrate.js",
-    "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --detectOpenHandles"
-  },
+{"scripts": {
+  "build": "tsc",
+  "typecheck": "tsc --noEmit",
+
+  "dev": "tsx auth-service/src/server.ts",
+  "start": "node auth-service/dist/server.js",
+
+  "migrate": "tsx auth-service/src/scripts/migrate.ts",
+  "migrate:dev": "tsx auth-service/src/scripts/migrate.ts",
+  "migrate:prod": "node auth-service/dist/scripts/migrate.js",
+
+  "test": "NODE_OPTIONS=--experimental-vm-modules jest --runInBand --detectOpenHandles"
+},
   "devDependencies": {
     "@types/cookie-parser": "^1.4.10",
     "@types/cors": "^2.8.19",

@@ -2,7 +2,7 @@ services:
   test-runner:
     build:
       context: .
-      target: builder 
+      target: builder
     environment:
       - DATABASE_URL=postgres://admin:admin123@postgres:5432/auth_db
       - REDIS_URL=redis://redis:6379
@@ -12,6 +12,6 @@ services:
       - postgres
       - redis
     volumes:
-      - .:/app               # Syncs your live VS Code files directly into the container
-      - /app/node_modules    # Protects the container's native Linux modules from being overwritten
-    command: npm test
+      - .:/app
+      - /app/node_modules
+    command: sh -lc "npm ci && npm test"
