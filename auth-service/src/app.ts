@@ -4,6 +4,7 @@ import authRoutes from "./routes/auth.routes.js";
 import { globalErrorHandler } from "./middlewares/error.middleware.js";
 import adminRoutes from "./routes/admin.routes.js"
 import {  globalLimiter } from './middlewares/rateLimiter.middleware.js';
+import { setupSwagger } from './config/swagger.js';
 import helmet from 'helmet';
 import cors from 'cors';
 
@@ -30,6 +31,7 @@ app.get('/health',(req,res)=> {
 })
 
 app.use(globalLimiter)
+setupSwagger(app);
 
 // routes
 app.use('/auth',authRoutes);

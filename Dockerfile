@@ -1,43 +1,35 @@
-# ==========================================
-# STAGE 1: BUILDER
-# ==========================================
-FROM node:20-alpine AS builder
+# STAGE 1: BUILDER (The Heavy Compiler)
+FROM node:22.23-trixie-slim AS builder
 
 WORKDIR /app
 
-# Install tools required to compile native dependencies such as argon2
-RUN apk add --no-cache python3 make g++
+COPY package.json ./
+COPY package-lock.json ./
 
-# Copy package files and install ALL dependencies (including dev for TS)
-COPY package*.json ./
 RUN npm ci
 
-# Copy the service source and compile with the root project configuration
-COPY tsconfig.json ./tsconfig.json
-COPY auth-service/src ./auth-service/src
-RUN ./node_modules/.bin/tsc -p tsconfig.json
+COPY tsconfig.json ./
+COPY auth-service/src ./src
 
-# ==========================================
-# STAGE 2: PRODUCTION
-# ==========================================
-FROM node:20-alpine AS production
+RUN npm run build
 
-# Enforce production environment optimizations
+# STAGE 2: PRODUCTION (The Lean Runtime)
+FROM node:22.23-trixie-slim AS production
+
 ENV NODE_ENV=production
 
 WORKDIR /app
 
-# Reuse the native modules built in the builder, then remove dev dependencies
-COPY --from=builder /app/node_modules ./node_modules
-COPY package*.json ./
-RUN npm prune --omit=dev
+COPY package.json ./
+COPY package-lock.json ./
 
-# Transfer the compiled JavaScript from the builder
+RUN npm ci --omit=dev
+
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/auth-service/src/config/schema.sql ./src/config/schema.sql
 
-# Expose the network port
+COPY --from=builder /app/src/config/schema.sql ./dist/config/schema.sql
+
 EXPOSE 3000
 
-# Execute the compiled server file
 CMD ["node", "dist/server.js"]
+
