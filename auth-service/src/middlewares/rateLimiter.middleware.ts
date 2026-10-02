@@ -26,8 +26,8 @@ export const authLimiter = rateLimit({
   store: new RedisStore({
     sendCommand: (...args: string[]) => redisClient.sendCommand(args)
   }),
-  windowMs: 15*60*1000,
-  max: 15,
+  windowMs: 60 * 1000,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: {

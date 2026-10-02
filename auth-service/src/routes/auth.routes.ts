@@ -2,7 +2,7 @@ import { Router } from "express";
 import { validate } from "../middlewares/validate.middleware.js";
 import { getMe } from "../controllers/user.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
-import { register, login, logout, forgotPassword, resetPassword, verifyEmail, sendVerificationEmail, refreshToken } from '../controllers/auth.controller.js';
+import { register, login, logout, forgotPassword, resetPassword, verifyEmail, verifyEmailLink, sendVerificationEmail, refreshToken } from '../controllers/auth.controller.js';
 import { registerSchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema } from '../schemas/auth.schema.js';
 import { authLimiter } from '../middlewares/rateLimiter.middleware.js';
 import { requireVerified } from "../middlewares/verified.middleware.js";
@@ -114,6 +114,7 @@ router.post('/forgot-password',authLimiter, validate(forgotPasswordSchema), forg
 router.post('/reset-password', authLimiter, validate(resetPasswordSchema), resetPassword);
 
 router.post('/email-verification/verify', authLimiter, validate(verifyEmailSchema), verifyEmail);
+router.get('/email-verification/verify', authLimiter, verifyEmailLink);
 router.post('/email-verification/send', authLimiter, requireAuth, sendVerificationEmail);
 
 // Backward-compatible aliases for existing clients.

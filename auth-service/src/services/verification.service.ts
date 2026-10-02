@@ -18,8 +18,8 @@ export const generateVerificationToken = async (email: string): Promise<void> =>
     await createToken(user.id, tokenHash, 'EMAIL_VERIFICATION', expiresAt);
 
     const verificationUrl = new URL(
-        '/verify-email',
-        process.env.FRONTEND_URL || 'http://localhost:3000'
+        '/auth/email-verification/verify',
+        process.env.API_URL || process.env.FRONTEND_URL || 'http://localhost:3000'
     );
     verificationUrl.searchParams.set('token', rawToken);
 

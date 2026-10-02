@@ -164,6 +164,24 @@ export const verifyEmail = async (req: Request, res: Response, next: NextFunctio
   }
 };
 
+export const verifyEmailLink = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  try {
+    const token = typeof req.query.token === 'string' ? req.query.token : undefined;
+
+    if (!token) {
+      throw new AppError('Verification token is required', 400);
+    }
+
+    await executeEmailVerification(token);
+    res.status(200).json({
+      error: false,
+      message: 'Email successfully verified.'
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 
 
 export const refreshToken = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
