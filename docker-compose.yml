@@ -3,6 +3,9 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    env_file:
+      - ./auth-service/.env
+      - ./.env
     ports:
       - "3000:3000"
     restart: unless-stopped
@@ -14,13 +17,6 @@ services:
       - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
       - TRUST_PROXY=${TRUST_PROXY:-false}
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-587}
-      - SMTP_SECURE=${SMTP_SECURE:-false}
-      - SMTP_REQUIRE_TLS=${SMTP_REQUIRE_TLS:-true}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASS=${SMTP_PASS:-}
-      - EMAIL_FROM=${EMAIL_FROM:-}
     depends_on:
       postgres:
         condition: service_healthy

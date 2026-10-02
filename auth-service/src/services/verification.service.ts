@@ -7,27 +7,29 @@ import { sendEmail } from './email.service.js';
 
 
 export const generateVerificationToken = async (email: string): Promise<void> => {
-  // 1. Fetch user by email.
-        const user = await findUserByEmail(email);
-  // 2. If user doesn't exist, OR if user.is_verified is already true, simply return.
-      if(!user || user.is_verified) return;
-  // 3. Generate a secure random token: crypto.randomBytes(32).toString('hex').
-      const rawToken = crypto.randomBytes(32).toString('hex')
-  // 4. Hash the token for DB storage (SHA-256).
-      const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
-  // 5. Calculate expiration date (e.g., 24 hours from now).
-      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  // 6. Delete any existing 'EMAIL_VERIFICATION' tokens for this user via repository.
-      await deleteTokensByUserId(user.id, 'EMAIL_VERIFICATION');
-  // 7. Save the hashed token to the database using createToken() with type 'EMAIL_VERIFICATION'.
-      await createToken(user.id,tokenHash,'EMAIL_VERIFICATION',expiresAt);
-  // 8. Simulate email delivery by logging the RAW token to your console:
-  // console.log(`[EMAIL SIMULATION] Verification link: http://localhost:3000/verify-email?token=${rawToken}`);
-      const htmlTemplate = `
+    const user = await findUserByEmail(email);
+    if (!user || user.is_verified) return;
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await deleteTokensByUserId(user.id, 'EMAIL_VERIFICATION');
+    await createToken(user.id, tokenHash, 'EMAIL_VERIFICATION', expiresAt);
+
+    const verificationUrl = new URL(
+        '/verify-email',
+        process.env.FRONTEND_URL || 'http://localhost:3000'
+    );
+    verificationUrl.searchParams.set('token', rawToken);
+
+    const htmlTemplate = `
         <h1>Verify Your Account</h1>
-        <p>Use the token below to verify your email address:</p>
-        <p><strong>${rawToken}</strong></p>`;
-      await sendEmail(user.email, 'Verify your account', htmlTemplate);
+        <p>Click the button below to verify your email address.</p>
+        <p><a href="${verificationUrl.toString()}">Verify email address</a></p>
+        <p>This link expires in 24 hours.</p>`;
+
+    await sendEmail(user.email, 'Verify your account', htmlTemplate);
 };
 
 export const executeEmailVerification = async (rawToken: string): Promise<void> => {

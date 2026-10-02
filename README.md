@@ -95,6 +95,7 @@ SMTP_SECURE=false
 SMTP_REQUIRE_TLS=true
 SMTP_USER=your-smtp-user
 SMTP_PASS=your-smtp-password
+# Optional: defaults to SMTP_USER when omitted.
 EMAIL_FROM=noreply@example.com
 ```
 
@@ -104,6 +105,8 @@ Notes:
 - `DATABASE_URL` should match your PostgreSQL instance
 - `REDIS_URL` should use `redis://redis:6379` when the API runs in Compose
 - Configure SMTP variables for verification and password-reset email delivery
+- `SMTP_USER`, `SMTP_PASS`, and `SMTP_HOST` configure the mail server; they are not the recipient's address
+- The recipient is taken from the email submitted during registration or login. Do not add each user's email to `.env`
 - Use strong, externalized credentials and `NODE_ENV=production` in production
 
 ---
@@ -193,7 +196,8 @@ npm test                   # run Jest test suite
 - `POST /auth/forgot-password` — request password reset
 - `POST /auth/reset-password` — complete password reset with a token
 - `POST /auth/verify-email` — verify email using a verification token
-- `POST /auth/verify-email/resend` — resend verification email
+- `POST /auth/email-verification/send` — send or resend the verification email for the authenticated user
+- `POST /auth/email-verification/verify` — verify an email using the token from the link
 
 ### Admin
 

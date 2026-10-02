@@ -1,6 +1,8 @@
 import nodemailer from 'nodemailer';
+import { AppError } from '../utils/AppError.js';
 
-const smtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && process.env.EMAIL_FROM);
+const emailFrom = process.env.EMAIL_FROM || process.env.SMTP_USER;
+const smtpConfigured = Boolean(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS && emailFrom);
 
 const transporter = smtpConfigured
   ? nodemailer.createTransport({
@@ -17,13 +19,12 @@ const transporter = smtpConfigured
 
 export const sendEmail = async (to: string, subject: string, html: string) => {
   if (!transporter) {
-    console.warn(`[EMAIL] SMTP is not configured; email was not sent to ${to}`);
-    return;
+    throw new AppError('Email delivery is not configured', 503);
   }
 
   try {
     const info = await transporter.sendMail({
-      from: `Authentication System <${process.env.EMAIL_FROM}>`,
+      from: `Authentication System <${emailFrom}>`,
       to,
       subject,
       html,
@@ -31,6 +32,6 @@ export const sendEmail = async (to: string, subject: string, html: string) => {
     console.log(`[EMAIL SENT] Message ID: ${info.messageId}`);
   } catch (error) {
     console.error('[EMAIL ERROR] Failed to send email:', error);
-    throw new Error('Email delivery failed');
+    throw new AppError('Email provider rejected the delivery request', 503);
   }
 };
